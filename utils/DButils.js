@@ -4,6 +4,7 @@ import pool from "../config/db.js"
   << Usage >>
    const val = await execQuery("SELECT * FRPOM Users WHERE UserID = ?", [12345]);
 */
+
 async function execQuery(SQL, values) {
 
     let result = null;
