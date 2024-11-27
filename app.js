@@ -6,6 +6,8 @@ import cookieParser from 'cookie-parser';
 
 import pool from './config/db.js';
 
+import productRoutes from './routes/productRoutes.js';
+
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -38,6 +40,9 @@ app.get('/api/test', async (req, res) => {
   const [rows] = await pool.query('SELECT 1 + 1 AS solution');
   res.json({ solution: rows[0].solution });
 });
+
+// 상품 등록 및 검색 라우트
+app.use('/product', productRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
