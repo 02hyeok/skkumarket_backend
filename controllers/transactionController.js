@@ -1,3 +1,4 @@
+import pool from '../config/db.js';
 import transactionModel from '../models/transactionModel.js';
 import { asyncHandler, getCurrentTimestamp } from './utils.js';
 
