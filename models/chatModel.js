@@ -26,19 +26,19 @@ chatModel.getChat = async (chatID) => {
 };
 
 // 채팅방 목록 확인
-chatModel.getAllChats = async () => {
+chatModel.getAllChats = async (user_id) => {
     const query = `
-      SELECT * FROM Chat
+      SELECT * FROM Chat WHERE seller_id = ? OR buyer_id = ?
     `;
-    const [rows] = await pool.query(query);
+    const [rows] = await pool.query(query, [user_id, user_id]);
     return rows; // 모든 채팅방 목록 반환
 };
 
 // 메시지 추가
 chatModel.addMessage = async (chat_id, sender_id, message) => {
     const query = `
-    INSERT INTO ChatMessage (chat_id, sender_id, message, send_at)
-    VALUES (?, ?, ?, NOW())
+    INSERT INTO ChatMessage (chat_id, sender_id, message)
+    VALUES (?, ?, ?)
     `;
     const [result] = await pool.query(query, [chat_id, sender_id, message]);
     return result.insertId; // 생성된 메시지 ID 반환

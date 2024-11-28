@@ -11,7 +11,7 @@ router.get('/', (req, res) => {
 router.post('/create', createChatController);
 
 // 전체 채팅방 불러오기
-router.get('/rooms', getAllChatsController);
+router.get('/rooms/:user_id', getAllChatsController);
 
 // 특정 채팅방 불러오기
 router.get('/room/:chat_id', getChatController);

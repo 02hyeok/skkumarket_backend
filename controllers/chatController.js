@@ -5,17 +5,27 @@ import chatModel from '../models/chatModel.js';
 // 채팅방 생성 컨트롤러
 export const createChatController = async (req, res) => {
     const { product_id, seller_id, buyer_id } = req.body;
+
+    if(!product_id || !seller_id || !buyer_id) {
+        res.status(404).json({ message: 'product ID, seller ID and buyer ID are required' });
+    }
+
     try {
         const chatID = await chatModel.createChat(product_id, seller_id, buyer_id);
         res.status(200).json({ chatID, message: 'Chat room created successfully' });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(404).json({ error: error.message });
     }
 };
 
 // 특정 채팅방 조회 컨트롤러
 export const getChatController = async (req, res) => {
     const { chat_id } = req.params;
+
+    if(!chat_id) {
+        res.status(404).json({ message: 'char ID is required' });
+    }
+
     try {
         const chat = await chatModel.getChat(chat_id);
         if (!chat) {
@@ -23,17 +33,23 @@ export const getChatController = async (req, res) => {
         }
         res.status(200).json(chat);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(404).json({ error: error.message });
     }
 };
 
 // 모든 채팅방 조회 컨트롤러
 export const getAllChatsController = async (req, res) => {
+    const { user_id } = req.params;
+
+    if(!user_id) {
+        res.status(404).json({ message: 'user ID is required' });
+    }
+
     try {
-        const chats = await chatModel.getAllChats();
+        const chats = await chatModel.getAllChats(user_id);
         res.status(200).json(chats);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(404).json({ error: error.message });
     }
 };
 
@@ -41,22 +57,32 @@ export const getAllChatsController = async (req, res) => {
 export const addMessageController = async (req, res) => {
     const { chat_id } = req.params;
     const { sender_id, message } = req.body;
+
+    if(!chat_id || !sender_id || !message) {
+        res.status(404).json({ message: 'chat ID, sender ID and message are required' });
+    }
+
     try {
         const messageID = await chatModel.addMessage(chat_id, sender_id, message);
         res.status(200).json({ messageID, message: 'Message added successfully' });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(404).json({ error: error.message });
     }
 };
   
-// 특정 채팅방의 모든 메시지 조회 컨트롤러
+// 채팅방의 모든 채팅 불러오기
 export const getMessagesController = async (req, res) => {
     const { chat_id } = req.params;
+    
+    if(!chat_id) {
+        res.status(404).json({ message: 'chat ID is required' });
+    }
+
     try {
         const messages = await chatModel.getMessages(chat_id);
         res.status(200).json(messages);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(404).json({ error: error.message });
     }
 };
 
