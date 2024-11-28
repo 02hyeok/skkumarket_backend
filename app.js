@@ -8,6 +8,8 @@ import pool from './config/db.js';
 import { readdir } from 'fs/promises';
 import path from 'path';
 
+import socket from './socket.js';
+
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -68,6 +70,15 @@ const addRoutes = async (basePath, routeBase = '') => {
 
 await addRoutes(path.resolve('./routes'));
 
-app.listen(PORT, () => {
+// 채팅 확인용 테스트 경로
+app.use(express.static('public'));
+app.get('/chat', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'chat.html'));
+});
+
+// 서버 실행
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+socket(server);

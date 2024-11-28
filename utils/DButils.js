@@ -10,10 +10,11 @@ async function execQuery(SQL, values) {
     let result = null;
     const connection = await pool.getConnection();
     try {
-        if(values)
+        if(values) {
             [ result ]= await connection.query(SQL, values);
-        else
+        } else {
             [ result ]= await connection.query(SQL);
+        }
     } catch(error) {
         console.error(error);
         connection.rollback();
