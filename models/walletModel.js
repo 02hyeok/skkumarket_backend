@@ -23,16 +23,24 @@ walletModel.getTransactionHistory = async (userId) => {
 };
 
 // 포인트 충전
-walletModel.chargeBalance = async (userId, amount) => {
+walletModel.chargeBalance = async (userId, amount, connection) => {
     const sql = 'UPDATE SKKUMoney SET balance = balance + ? WHERE user_id = ?';
-    const [result] = await pool.execute(sql, [amount, userId]);
+    if (!connection){
+        const [result] = await pool.execute(sql, [amount, userId]);
+        return result.affectedRows; // 성공 여부 반환
+    }
+    const [result] = await connection.execute(sql, [amount, userId]);
     return result.affectedRows; // 성공 여부 반환
 };
 
 // 포인트 인출
-walletModel.withdrawBalance = async (userId, amount) => {
+walletModel.withdrawBalance = async (userId, amount, connection) => {
     const sql = 'UPDATE SKKUMoney SET balance = balance - ? WHERE user_id = ?';
-    const [result] = await pool.execute(sql, [amount, userId]);
+    if (!connection) {
+        const [result] = await pool.execute(sql, [amount, userId]);
+        return result.affectedRows; // 성공 여부 반환
+    }
+    const [result] = await connection.execute(sql, [amount, userId]);
     return result.affectedRows; // 성공 여부 반환
 };
 
@@ -44,12 +52,16 @@ walletModel.findUser = async (userId) => {
 };
 
 // 트랜잭션 기록 추가
-walletModel.addTransaction = async (userId, amount, balance, type) => {
+walletModel.addTransaction = async (userId, amount, balance, type, connection) => {
     const sql = `
         INSERT INTO SKKUMoneyTransaction (user_id, amount, balance, type)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?)
     `;
-    const [result] = await pool.execute(sql, [userId, amount, balance, type]);
+    if (!connection) {
+        const [result] = await pool.execute(sql, [userId, amount, balance, type]);
+        return result.insertId; // 새 트랜잭션 ID 반환
+    }
+    const [result] = await connection.query(sql, [userId, amount, balance, type]);
     return result.insertId; // 새 트랜잭션 ID 반환
 };
 
