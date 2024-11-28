@@ -44,12 +44,12 @@ walletModel.findUser = async (userId) => {
 };
 
 // 트랜잭션 기록 추가
-walletModel.addTransaction = async (userId, amount, balance, type, createdAt) => {
+walletModel.addTransaction = async (userId, amount, balance, type) => {
     const sql = `
-        INSERT INTO SKKUMoneyTransaction (user_id, amount, balance, type, created_at)
+        INSERT INTO SKKUMoneyTransaction (user_id, amount, balance, type)
         VALUES (?, ?, ?, ?, ?)
     `;
-    const [result] = await pool.execute(sql, [userId, amount, balance, type, createdAt]);
+    const [result] = await pool.execute(sql, [userId, amount, balance, type]);
     return result.insertId; // 새 트랜잭션 ID 반환
 };
 

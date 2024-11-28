@@ -1,7 +1,7 @@
 // 지갑 컨트롤러
 import pool from '../config/db.js';
 import walletModel from '../models/walletModel.js';
-import { asyncHandler, getCurrentTimestamp } from './utils.js';
+import { asyncHandler } from './utils.js';
 
 const CHARGE = 'charge';
 const WITHDRAW = 'withdraw';
@@ -60,9 +60,10 @@ export const postCharge = asyncHandler(async (req, res) => {
     try {
         await walletModel.chargeBalance(user_id, amount);
 
-        const createdAt = getCurrentTimestamp();
-        await walletModel.addTransaction(user_id, amount, currentBalance + amount, CHARGE, createdAt);
+        await walletModel.addTransaction(user_id, amount, currentBalance + amount, CHARGE);
 
+        await connection.commit();
+        
         res.status(200).json({
             balance: currentBalance + amount,
             message: 'SKKUMoney charged successfully',
@@ -99,8 +100,7 @@ export const postWithdraw = asyncHandler(async (req, res) => {
     try {
         await walletModel.withdrawBalance(user_id, amount);
 
-        const createdAt = getCurrentTimestamp();
-        await walletModel.addTransaction(user_id, amount, currentBalance - amount, WITHDRAW, createdAt);
+        await walletModel.addTransaction(user_id, amount, currentBalance - amount, WITHDRAW);
 
         res.status(200).json({
             balance: currentBalance - amount,
