@@ -20,6 +20,25 @@ export const getBalance = asyncHandler(async (req, res) => {
     });
 });
 
+// 충전 및 인출 내역 가져오기
+export const getHistory = asyncHandler(async (req, res) => {
+    const { user_id } = req.params;
+
+    if (!user_id) {
+        return res.status(400).json({ message: 'Invalid user_id' });
+    }
+
+    const transactions = await walletModel.getTransactionHistory(user_id);
+    if (!transactions || transactions.length === 0) {
+        return res.status(404).json({ message: 'No transactions found for the user' });
+    }
+
+    res.status(200).json({
+        user_id,
+        transactions,
+    });
+});
+
 // 포인트 충전
 export const postCharge = asyncHandler(async (req, res) => {
     const { user_id, amount } = req.body;

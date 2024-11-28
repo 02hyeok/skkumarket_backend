@@ -10,6 +10,18 @@ walletModel.getBalance = async (userId) => {
     return rows[0]; // 결과가 없으면 undefined 반환
 };
 
+// 트랜잭션 내역 가져오기
+walletModel.getTransactionHistory = async (userId) => {
+    const sql = `
+        SELECT id, user_id, amount, balance, type, created_at
+        FROM SKKUMoneyTransaction
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+    `;
+    const [rows] = await pool.execute(sql, [userId]);
+    return rows;
+};
+
 // 포인트 충전
 walletModel.chargeBalance = async (userId, amount) => {
     const sql = 'UPDATE SKKUMoney SET balance = balance + ? WHERE user_id = ?';
