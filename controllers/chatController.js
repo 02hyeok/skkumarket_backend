@@ -7,7 +7,7 @@ export const createChatController = async (req, res) => {
     const { product_id, seller_id, buyer_id } = req.body;
     try {
         const chatID = await chatModel.createChat(product_id, seller_id, buyer_id);
-        res.status(201).json({ chatID, message: 'Chat room created successfully' });
+        res.status(200).json({ chatID, message: 'Chat room created successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -15,9 +15,9 @@ export const createChatController = async (req, res) => {
 
 // 특정 채팅방 조회 컨트롤러
 export const getChatController = async (req, res) => {
-    const { chatID } = req.params;
+    const { chat_id } = req.params;
     try {
-        const chat = await chatModel.getChat(chatID);
+        const chat = await chatModel.getChat(chat_id);
         if (!chat) {
             return res.status(404).json({ message: 'Chat room not found' });
         }
@@ -39,11 +39,11 @@ export const getAllChatsController = async (req, res) => {
 
 // 메시지 추가 컨트롤러
 export const addMessageController = async (req, res) => {
-    const { chatID } = req.params;
+    const { chat_id } = req.params;
     const { sender_id, message } = req.body;
     try {
-        const messageID = await addMessage(chatID, sender_id, message);
-        res.status(201).json({ messageID, message: 'Message added successfully' });
+        const messageID = await chatModel.addMessage(chat_id, sender_id, message);
+        res.status(200).json({ messageID, message: 'Message added successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -51,9 +51,9 @@ export const addMessageController = async (req, res) => {
   
 // 특정 채팅방의 모든 메시지 조회 컨트롤러
 export const getMessagesController = async (req, res) => {
-    const { chatID } = req.params;
+    const { chat_id } = req.params;
     try {
-        const messages = await getMessages(chatID);
+        const messages = await chatModel.getMessages(chat_id);
         res.status(200).json(messages);
     } catch (error) {
         res.status(500).json({ error: error.message });
