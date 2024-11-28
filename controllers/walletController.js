@@ -1,4 +1,5 @@
 // 지갑 컨트롤러
+import pool from '../config/db.js';
 import walletModel from '../models/walletModel.js';
 import { asyncHandler, getCurrentTimestamp } from './utils.js';
 
@@ -54,15 +55,24 @@ export const postCharge = asyncHandler(async (req, res) => {
 
     const currentBalance = user.balance;
 
-    await walletModel.chargeBalance(user_id, amount);
+    // 트랜잭션 처리
+    const connection = await pool.getConnection();
+    try {
+        await walletModel.chargeBalance(user_id, amount);
 
-    const createdAt = getCurrentTimestamp();
-    await walletModel.addTransaction(user_id, amount, currentBalance + amount, CHARGE, createdAt);
+        const createdAt = getCurrentTimestamp();
+        await walletModel.addTransaction(user_id, amount, currentBalance + amount, CHARGE, createdAt);
 
-    res.status(200).json({
-        balance: currentBalance + amount,
-        message: 'SKKUMoney charged successfully',
-    });
+        res.status(200).json({
+            balance: currentBalance + amount,
+            message: 'SKKUMoney charged successfully',
+        });
+    } catch (error) {
+        await connection.rollback(); // 트랜잭션 롤백
+        res.status(500).json({ message: 'Transaction failed', error: error.message });
+    } finally {
+        connection.release(); // DB 연결 해제
+    }
 });
 
 // 포인트 인출
@@ -84,13 +94,22 @@ export const postWithdraw = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'Insufficient balance' });
     }
 
-    await walletModel.withdrawBalance(user_id, amount);
+    // 트랜잭션 처리
+    const connection = await pool.getConnection();
+    try {
+        await walletModel.withdrawBalance(user_id, amount);
 
-    const createdAt = getCurrentTimestamp();
-    await walletModel.addTransaction(user_id, amount, currentBalance - amount, WITHDRAW, createdAt);
+        const createdAt = getCurrentTimestamp();
+        await walletModel.addTransaction(user_id, amount, currentBalance - amount, WITHDRAW, createdAt);
 
-    res.status(200).json({
-        balance: currentBalance - amount,
-        message: 'SKKUMoney withdrawn successfully',
-    });
+        res.status(200).json({
+            balance: currentBalance - amount,
+            message: 'SKKUMoney withdrawn successfully',
+        });
+    } catch (error) {
+        await connection.rollback(); // 트랜잭션 롤백
+        res.status(500).json({ message: 'Transaction failed', error: error.message });
+    } finally {
+        connection.release(); // DB 연결 해제
+    }
 });
