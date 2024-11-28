@@ -8,8 +8,17 @@ productController.registerProduct = async (req, res) => {
   try {
     const productData = req.body;
 
+    // 업로드된 이미지 파일 처리
+    if (req.file) {
+      // 이미지 URL 생성
+      const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+      productData.image_url = imageUrl;
+    } else {
+      return res.status(400).json({ error: '이미지 파일이 필요합니다.' });
+    }
+
     // 필수 필드 검증
-    const requiredFields = ['user_id', 'image_url', 'title', 'price', 'description', 'category_id', 'location', 'status'];
+    const requiredFields = ['user_id', 'title', 'price', 'description', 'category_id', 'location', 'status'];
     for (const field of requiredFields) {
       if (!productData[field]) {
         return res.status(400).json({ error: `필수 정보가 부족합니다: ${field}` });

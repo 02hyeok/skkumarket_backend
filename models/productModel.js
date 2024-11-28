@@ -27,55 +27,66 @@ productModel.createProduct = async (productData) => {
 
 // 상품 검색
 productModel.searchProducts = async (filters) => {
-  let sql = 'SELECT * FROM Product';
+  let sql = `
+    SELECT
+      p.*
+    FROM Product p
+  `;
   const params = [];
 
   const whereClauses = [];
 
+  // 판매자 전공 필터 있을 때만 User 테이블과 join
+  if (filters.seller_major) {
+    sql += `
+      JOIN User u ON p.user_id = u.id
+    `;
+    whereClauses.push('u.major = ?');
+    params.push(filters.seller_major);
+  }
+
   if (filters.searchTerm) {
-    whereClauses.push('(title LIKE ? OR keywords LIKE ?)');
+    whereClauses.push('(p.title LIKE ? OR p.keywords LIKE ?)');
     const searchPattern = `%${filters.searchTerm}%`;
     params.push(searchPattern, searchPattern);
   }
 
   if (filters.category_id) {
-    whereClauses.push('category_id = ?');
+    whereClauses.push('p.category_id = ?');
     params.push(filters.category_id);
   }
   if (filters.priceMin) {
-    whereClauses.push('price >= ?');
+    whereClauses.push('p.price >= ?');
     params.push(filters.priceMin);
   }
   if (filters.priceMax) {
-    whereClauses.push('price <= ?');
+    whereClauses.push('p.price <= ?');
     params.push(filters.priceMax);
   }
   if (filters.location) {
-    whereClauses.push('location = ?');
+    whereClauses.push('p.location = ?');
     params.push(filters.location);
   }
   if (filters.status) {
-    whereClauses.push('status = ?');
+    whereClauses.push('p.status = ?');
     params.push(filters.status);
   }
   if (filters.keywords) {
-    whereClauses.push('(title LIKE ? OR description LIKE ? OR keywords LIKE ?)');
+    whereClauses.push('(p.title LIKE ? OR p.description LIKE ? OR p.keywords LIKE ?)');
     const keywordPattern = `%${filters.keywords}%`;
     params.push(keywordPattern, keywordPattern, keywordPattern);
   }
   
-  // User 테이블 통합하고 주석 제거
-  /*
   if (filters.seller_major) {
     whereClauses.push('u.major = ?');
     params.push(filters.seller_major);
-  }*/
+  }
 
   if (whereClauses.length > 0) {
     sql += ' WHERE ' + whereClauses.join(' AND ');
   }
   
-  sql += ' ORDER BY created_at DESC';
+  sql += ' ORDER BY p.created_at DESC';
 
   const [rows] = await pool.execute(sql, params);
   return rows;
@@ -83,7 +94,7 @@ productModel.searchProducts = async (filters) => {
 
 // 상품 정보 가져오기
 productModel.getProductById = async (productId) => {
-  /*const sql = `
+  const sql = `
     SELECT
       p.id,
       p.image_url,
@@ -97,19 +108,6 @@ productModel.getProductById = async (productId) => {
       u.major AS seller_major
     FROM Product p
     JOIN User u ON p.user_id = u.id
-    WHERE p.id = ?
-  `;*/
-  // user table 생성 후 아래 코드에서 위 코드로 변경
-  const sql = `
-    SELECT
-      p.id,
-      p.image_url,
-      p.title,
-      p.created_at,
-      p.price,
-      p.keywords AS transaction_place,
-      p.description
-    FROM Product p
     WHERE p.id = ?
   `;
 

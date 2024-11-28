@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
+import multer from 'multer';
 
 import pool from './config/db.js';
 
@@ -13,6 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // const { application } = require('express');
+app.use('/uploads', express.static('uploads'));
 
 //application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({extended: true}));
@@ -43,6 +45,23 @@ app.get('/api/test', async (req, res) => {
 
 // 상품 등록 및 검색 라우트
 app.use('/product', productRoutes);
+
+// 에러 핸들링 미들웨어 추가
+app.use((err, req, res, next) => {
+  if (err) {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: '파일 크기가 너무 큽니다. 최대 30MB까지 업로드할 수 있습니다.' });
+      }
+      return res.status(400).json({ error: err.message });
+    } else if (err.message === '허용되지 않는 파일 형식입니다.') {
+      return res.status(400).json({ error: err.message });
+    } else {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+  next();
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
