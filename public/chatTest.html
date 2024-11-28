@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Application</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    #chatList {
+      border: 1px solid #ccc;
+      height: 200px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      padding: 10px;
+    }
+    #chatList div {
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    #chatList div:hover {
+      background-color:burlywood;
+    }
+    #messages {
+      border: 1px solid #ccc;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      padding: 10px;
+      display: none;
+    }
+    #messageInput, #sendButton {
+      display: none;
+    }
+    #messageInput {
+      width: calc(100% - 80px);
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    #sendButton {
+      width: 60px;
+      padding: 10px;
+    }
+    #createRoomForm {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chat Application</h1>
+
+  <!-- 채팅방 생성 -->
+  <form id="createRoomForm">
+    <input type="text" id="product_id" placeholder="Product ID" required />
+    <input type="text" id="seller_id" placeholder="Seller ID" required />
+    <input type="text" id="buyer_id" placeholder="Buyer ID" required />
+    <button type="submit">Create Room</button>
+  </form>
+
+  <!-- 채팅방 목록 -->
+  <h2>Available Chat Rooms</h2>
+  <div id="chatList">Loading chat rooms...</div>
+
+  <!-- 채팅방 -->
+  <h2 id="roomTitle" style="display: none;">Chat Room</h2>
+  <div id="messages"></div>
+  <input id="messageInput" placeholder="Type your message here..." />
+  <button id="sendButton">Send</button>
+
+  <script>
+    const socket = io('http://localhost:3000'); // Socket.IO 서버에 연결
+    let currentChatID = null;
+    let senderID = null;
+
+    window.onload = () => {
+      senderID = prompt('Enter your ID:'); // 사용자 ID 입력
+      if (!senderID || senderID.trim() === '') {
+        alert('ID is required to use the chat.');
+        window.location.reload(); // ID가 없으면 새로고침
+      }
+    };
+
+    // 채팅방 목록 로드
+    async function loadChatRooms() {
+      try {
+        const response = await fetch('/chat/rooms'); // 채팅방 목록 라우터 호출
+        const chatRooms = await response.json();
+        displayChatRooms(chatRooms);
+      } catch (error) {
+        console.error('Error loading chat rooms:', error);
+        document.getElementById('chatList').innerHTML = 'Failed to load chat rooms.';
+      }
+    }
+
+    // 채팅방 목록 표시
+    function displayChatRooms(chatRooms) {
+      const chatList = document.getElementById('chatList');
+      chatList.innerHTML = ''; // 기존 목록 초기화
+      chatRooms.forEach((room) => {
+        const div = document.createElement('div');
+        div.textContent = `Room ID: ${room.id}, Product: ${room.product_id}`;
+        div.style.cursor = 'pointer';
+        div.addEventListener('click', () => joinRoom(room.id)); // 클릭 시 채팅방 참가
+        chatList.appendChild(div);
+      });
+    }
+
+    // 채팅방 생성
+    document.getElementById('createRoomForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const product_id = document.getElementById('product_id').value;
+      const seller_id = document.getElementById('seller_id').value;
+      const buyer_id = document.getElementById('buyer_id').value;
+
+      try {
+        const response = await fetch('/chat/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product_id, seller_id, buyer_id }),
+        });
+
+        if (response.ok) {
+          alert('Chat room created successfully!');
+          loadChatRooms(); // 채팅방 목록 새로고침
+        } else {
+          const error = await response.json();
+          alert(`Error creating chat room: ${error.message}`);
+        }
+      } catch (error) {
+        console.error('Error creating chat room:', error);
+      }
+    });
+
+    // 채팅방 참가
+    function joinRoom(chatID) {
+      currentChatID = chatID;
+      socket.emit('joinRoom', { chatID }); // Socket.IO를 통해 서버에 참가 요청
+      document.getElementById('roomTitle').style.display = 'block';
+      document.getElementById('messages').style.display = 'block';
+      document.getElementById('messageInput').style.display = 'inline-block';
+      document.getElementById('sendButton').style.display = 'inline-block';
+      document.getElementById('roomTitle').textContent = `Chat Room: ${chatID}`;
+    }
+
+    // 이전 메시지 수신
+    socket.on('previousMessages', (messages) => {
+      const messagesList = document.getElementById('messages');
+      messagesList.innerHTML = ''; // 메시지 초기화
+      messages.forEach((msg) => {
+        const div = document.createElement('div');
+        div.textContent = `${msg.sender_id}: ${msg.message}`;
+        messagesList.appendChild(div);
+      });
+    });
+
+    // 새 메시지 수신
+    socket.on('newMessage', (msg) => {
+      const messagesList = document.getElementById('messages');
+      const div = document.createElement('div');
+      div.textContent = `${msg.sender_id}: ${msg.message}`;
+      messagesList.appendChild(div);
+      messagesList.scrollTop = messagesList.scrollHeight; // 스크롤 자동 이동
+    });
+
+    // 메시지 전송
+    document.getElementById('sendButton').addEventListener('click', () => {
+      const messageInput = document.getElementById('messageInput');
+      const message = messageInput.value.trim();
+      if (message && currentChatID && senderID) {
+        socket.emit('sendMessage', { chatID: currentChatID, sender_id: senderID, message });
+        messageInput.value = ''; // 입력창 초기화
+      }
+    });
+
+    // 서버 에러 처리
+    socket.on('error', (error) => {
+      alert(`Error: ${error.message}`);
+    });
+
+    // 페이지 로드 시 채팅방 목록 불러오기
+    loadChatRooms();
+  </script>
+</body>
+</html>

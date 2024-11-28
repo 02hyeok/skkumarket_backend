@@ -8,7 +8,7 @@ import pool from './config/db.js';
 import { readdir } from 'fs/promises';
 import path from 'path';
 
-import socket from './socket.js';
+import { socket } from './controllers/chatController.js';
 
 dotenv.config();
 const app = express();
@@ -72,8 +72,8 @@ await addRoutes(path.resolve('./routes'));
 
 // 채팅 확인용 테스트 경로
 app.use(express.static('public'));
-app.get('/chat', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'chat.html'));
+app.get('/chatTest', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'chatTest.html'));
 });
 
 // 서버 실행
