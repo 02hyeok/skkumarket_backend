@@ -67,8 +67,6 @@ app.use((err, req, res, next) => {
   next();
 });
 
-app.listen(PORT, () => {
-
 /*
   아래는 동적 라우팅입니다. (routes 폴더를 라우팅)
   예 routes
