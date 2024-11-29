@@ -6,6 +6,10 @@ import cookieParser from 'cookie-parser';
 import multer from 'multer';
 
 import pool from './config/db.js';
+import { readdir } from 'fs/promises';
+import path from 'path';
+
+import { socket } from './controllers/chatController.js';
 
 import productRoutes from './routes/productRoutes.js';
 
@@ -64,5 +68,42 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
+
+/*
+  아래는 동적 라우팅입니다. (routes 폴더를 라우팅)
+  예 routes
+      ㄴ test
+        ㄴ a.js
+  URL: http://localhost:3000/test/a
+*/
+const addRoutes = async (basePath, routeBase = '') => {
+  const files = await readdir(basePath, { withFileTypes: true }); // 파일과 폴더 구분
+
+  for (const file of files) {
+      const fullPath = path.join(basePath, file.name);
+
+      if (file.isDirectory()) {     // 디렉토리가 감지되면, 재귀 호출 진행
+          await addRoutes(fullPath, `${routeBase}/${file.name}`);
+      } else if (file.isFile() && file.name.endsWith('.js')) {    // 파일이면 라우팅
+          const modulePath = new URL(`file://${fullPath}`);
+          const route = await import(modulePath.href);
+          const routeName = `${routeBase}/${file.name.replace('.js', '')}`;
+          app.use(routeName, route.default);
+      }
+  }
+};
+
+await addRoutes(path.resolve('./routes'));
+
+// 채팅 확인용 테스트 경로
+app.use(express.static('public'));
+app.get('/chatTest', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'chatTest.html'));
+});
+
+// 서버 실행
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+socket(server);
