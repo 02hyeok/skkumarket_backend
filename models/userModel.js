@@ -3,6 +3,12 @@ import pool from '../config/db.js';
 
 const userModel = {};
 
+userModel.getUserById = async (user_id) => {
+    const sql = 'SELECT id, student_id, nickname, major FROM User WHERE id = ?';
+    const [rows] = await pool.execute(sql, [user_id]);
+    return rows[0]; // 결과가 없으면 undefined 반환
+};
+
 userModel.login = async (email, password) => {
     const sql = 'SELECT id, student_id, nickname, major FROM User WHERE email = ? AND password = ?';
     const [rows] = await pool.execute(sql, [email, password]);
