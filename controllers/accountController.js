@@ -1,24 +1,33 @@
 import { addAccount, deleteAccount, fetchAccounts } from '../models/accountModel.js';
+import userModel from '../models/userModel.js';
 
 // 사용자가 등록한 계좌 전체 조회
 export const getFetchAccountsController = async (req, res) => {
     const { user_id } = req.params;
-    try {
-        const [rows] = await fetchAccounts(user_id);
-        if (rows.length == 0){
-            return res.status(404).json({ message: '사용자 검색 실패'})
-        }
-        res.status(200).json(rows);
-    } catch (error) {
-        res.status(500).json({ message: '계좌 조회 실패', error: error.message });
+
+    const [rows] = await fetchAccounts(user_id);
+    if (rows.length == 0){
+        return res.status(404).json({ message: '사용자 검색 실패'})
     }
+    return res.status(200).json(rows);
 };
 
 // 사용자 계좌 추가
 export const postAddAccountController = async (req, res) => {
     const { user_id, bank, account_num } = req.body;
+
+    if (!user_id) {
+        return res.status(400).json({ message: 'Invalid user_id' });
+    }
+
+    // 유저 존재 여부 확인
+    const user = await userModel.getUserById(user_id);
+    if (!user){
+        return res.status(404).json({ message: 'User not found' });
+    }
+
     try {
-        await addAccount(user_id, bank, account_num);
+        const success = await addAccount(user_id, bank, account_num);
         res.status(200).json({ message: '계좌 추가 성공' });
     } catch (error) {
         res.status(500).json({ message: '계좌 추가 실패', error: error.message });
