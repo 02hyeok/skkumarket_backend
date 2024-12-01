@@ -16,9 +16,16 @@ userModel.login = async (account_id, password) => {
 };
 
 userModel.register = async (student_id, account_id, password, nickname, major) => {
+    const verify =  'SELECT COUNT(*) AS dup FROM User WHERE account_id = ?'
     const sql = 'INSERT INTO User (student_id, account_id, password, nickname, major) VALUES (?, ?, ?, ?, ?)';
+
+    const [user] = await pool.execute(verify, [account_id]);
+    if(user[0].dup > 0) {
+        return 0;
+    }
+
     const [result] = await pool.execute(sql, [student_id, account_id, password, nickname, major]);
-    return result.affectedRows // 삽입된 행위 개수 반환 (성공: 1, 실패: 0)
+    return result.affectedRows; // 삽입된 행위 개수 반환 (성공: 1, 실패: 0)
 };
 
 export default userModel;

@@ -6,10 +6,6 @@ import { asyncHandler, getCurrentTimestamp } from './utils.js';
 export const login = asyncHandler(async (req, res) => {
     const { account_id, password } = req.body;
 
-    if(!account_id || !password) {
-        return res.status(404).json({ message: 'Email and password are required.' });
-    }
-
     const result = await userModel.login(account_id, password);
     if (!result) {
         return res.status(404).json({ message: 'The account does not exist or entered an incorrect password.' });
@@ -20,11 +16,8 @@ export const login = asyncHandler(async (req, res) => {
 
 // 회원가입
 export const register = asyncHandler(async (req, res) => {
-    const { student_id, major, nickname, account_id, password, password2 } = req.body;
 
-    if(!student_id || !major || !nickname || !account_id || !password || !password2) {
-        return res.status(404).json({ message: 'There must be no empty fields.' });
-    }
+    const { student_id, major, nickname, account_id, password } = req.body;
 
     const result = await userModel.register(student_id, account_id, password, nickname, major);
     if (!result) {
